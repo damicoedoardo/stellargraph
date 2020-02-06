@@ -185,24 +185,15 @@ class StellarGraph:
         target_column=globalvar.TARGET,
     ):
         if graph is not None:
-            # While migrating, maintain complete compatibility by deferring to the networkx
-            # implementation
-
-            # Avoid a circular import
-            from .graph_networkx import NetworkXStellarGraph
-
-            self._graph = NetworkXStellarGraph(
+            nodes, edges = convert.from_networkx(
                 graph,
-                is_directed,
-                edge_weight_label,
-                node_type_name,
-                edge_type_name,
-                node_type_default,
-                edge_type_default,
-                feature_name,
-                target_name,
-                node_features,
-                dtype,
+                node_type_name=node_type_name,
+                edge_type_name=edge_type_name,
+                node_type_default=node_type_default,
+                edge_type_default=edge_type_default,
+                edge_weight_label=edge_weight_label,
+                node_features=node_features,
+                dtype=dtype,
             )
         else:
             warnings.warn(
@@ -211,27 +202,24 @@ class StellarGraph:
                 ExperimentalWarning,
             )
 
-            self._graph = None
+        if nodes is None:
+            nodes = {}
+        if edges is None:
+            edges = {}
 
-            if nodes is None:
-                nodes = {}
-            if edges is None:
-                edges = {}
-
-            self._is_directed = is_directed
-
-            self._nodes = convert.convert_nodes(
-                nodes, name="nodes", default_type=node_type_default, dtype=dtype,
-            )
-            self._edges = convert.convert_edges(
-                edges,
-                self._nodes,
-                name="edges",
-                default_type=edge_type_default,
-                source_column=source_column,
-                target_column=target_column,
-                weight_column=edge_weight_label,
-            )
+        self._is_directed = is_directed
+        self._nodes = convert.convert_nodes(
+            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
+        )
+        self._edges = convert.convert_edges(
+            edges,
+            self._nodes,
+            name="edges",
+            default_type=edge_type_default,
+            source_column=source_column,
+            target_column=target_column,
+            weight_column=edge_weight_label,
+        )
 
     @staticmethod
     def from_networkx(
